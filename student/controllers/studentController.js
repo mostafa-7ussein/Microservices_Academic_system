@@ -1,34 +1,41 @@
-
 import sequelize from "sequelize";
 import { Course } from "../models/course.js";
 
-const db = new sequelize(process.env.POSTGRES_URL);
+let db = null;
+let CourseDB = null;
 
-db.options.logging = (message) => {
-  if (message.startsWith("Executing")) {
-  } else {
-    console.log(message);
+const getDb = () => {
+  if (!db) {
+    db = new sequelize(process.env.POSTGRES_URL);
+    
+    db.options.logging = (message) => {
+      if (message.startsWith("Executing")) {
+      } else {
+        console.log(message);
+      }
+    };
+
+    CourseDB = db.define("course", {
+      id: {
+        type: sequelize.INTEGER,
+        allowNull: false,
+        primaryKey: true,
+      },
+      name: sequelize.STRING,
+    });
   }
+  return { db, CourseDB };
 };
-
-const CourseDB = db.define("course", {
-  id: {
-    type: sequelize.INTEGER,
-    allowNull: false,
-    primaryKey: true,
-  },
-  name: sequelize.STRING,
-});
-
-
-db.sync({ force: true });
 
 const addCourse = async (courseData) => {
   try {
+    const { db: dbInstance, CourseDB: CourseModel } = getDb();
+    await dbInstance.sync();
+    
     const course = new Course(courseData);
-    const result = await CourseDB.findByPk(course.id);
+    const result = await CourseModel.findByPk(course.id);
     if (!result) {
-      await CourseDB.create({
+      await CourseModel.create({
         id: course.id,
         name: course.name,
       });
@@ -41,9 +48,12 @@ const addCourse = async (courseData) => {
 
 const deleteCourse = async (courseData) => {
   try {
-    const result = await CourseDB.findByPk(courseData.id);
+    const { db: dbInstance, CourseDB: CourseModel } = getDb();
+    await dbInstance.sync();
+    
+    const result = await CourseModel.findByPk(courseData.id);
     if (result) {
-      await CourseDB.destroy({
+      await CourseModel.destroy({
         where: {
           id: courseData.id,
         },
@@ -56,10 +66,24 @@ const deleteCourse = async (courseData) => {
 };
 
 const getCourse = async (courseData) => {
-  return CourseDB.findByPk(courseData.id);
+  try {
+    const { db: dbInstance, CourseDB: CourseModel } = getDb();
+    await dbInstance.sync();
+    return await CourseModel.findByPk(courseData.id);
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
 };
 
 const getAllCourses = async () => {
-  return CourseDB.findAll();
+  try {
+    const { db: dbInstance, CourseDB: CourseModel } = getDb();
+    await dbInstance.sync();
+    return await CourseModel.findAll();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
 };
 export default { addCourse, deleteCourse, getCourse, getAllCourses };
