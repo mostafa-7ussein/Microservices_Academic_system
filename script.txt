@@ -1,0 +1,11 @@
+docker compose logs -f student
+
+
+.\monitor_kafka_queue.ps1
+
+
+
+for ($i=1; $i -le 10; $i++) {
+    Invoke-RestMethod -Uri "http://localhost:8080/add-course" -Method POST -ContentType "application/json" -Body "{`"id`": $i, `"name`": `"Course $i`"}"
+    Start-Sleep -Seconds 1
+}
