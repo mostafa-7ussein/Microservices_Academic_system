@@ -1,0 +1,60 @@
+services:
+  zookeeper:
+    container_name: zookeeper
+    image: wurstmeister/zookeeper
+    ports:
+        - 2181:2181
+  kafka:
+    container_name: kafka
+    image: wurstmeister/kafka
+    ports:
+      - 9092:9092
+    volumes:
+      - ./data/kafka:/var/run/docker.sock
+    environment:
+      - KAFKA_ADVERTISED_HOST_NAME=kafka
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+    depends_on:
+      - zookeeper
+  postgres:
+    container_name: postgres
+    image: postgres:15
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data/postgres:/var/lib/postgresql
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres 
+  instructor:
+    container_name: instructor
+    build: ./instructor
+    ports:
+      - 8080:8080
+    volumes:
+      - ./instructor:/instructor
+      - /instructor/node_modules
+    environment:
+      - PORT=8080
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC=topic1
+    depends_on:
+      - kafka
+  student:
+    container_name: student
+    build: ./student
+    ports:
+      - 8081:8081
+    volumes:
+      - ./student:/student
+      - /student/node_modules
+    environment:
+      - PORT=8081
+      - POSTGRES_URL=postgres://postgres:postgres@postgres:5432/postgres
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC=topic1
+    depends_on:
+      - postgres
+      - kafka
+      - instructor
