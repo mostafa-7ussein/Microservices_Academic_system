@@ -36,7 +36,7 @@ Client → Instructor Service → Kafka → Student Service → PostgreSQL
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
+   git clone (https://github.com/mostafa-7ussein/microservices_Academic_system.git)
    cd microservices_project-main
    ```
 
