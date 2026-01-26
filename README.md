@@ -6,6 +6,7 @@ A microservices architecture project demonstrating event-driven communication us
 
 This project implements a microservices architecture with the following components:
 
+- **Frontend** (Port 3000): React application providing user interface for course management
 - **Instructor Service** (Port 8080): Handles course creation/deletion requests, publishes events to Kafka, and can directly delete courses from the database
 - **Student Service** (Port 8081): Consumes events from Kafka and manages course data in PostgreSQL
 - **Kafka**: Message broker for asynchronous communication between services
@@ -16,13 +17,12 @@ This project implements a microservices architecture with the following componen
 
 **Adding a Course:**
 ```
-Client → Instructor Service → Kafka → Student Service → PostgreSQL
+Frontend → Instructor Service → Kafka → Student Service → PostgreSQL
 ```
-
 
 **Deleting a Course:**
 ```
-Client → Instructor Service → PostgreSQL (direct delete)
+Frontend → Instructor Service → PostgreSQL (direct delete)
                 ↓
             Kafka (notification)
                 ↓
@@ -251,21 +251,136 @@ GET http://localhost:8081/live
 }
 ```
 
-## 🧪 Testing
+## 🎨 Frontend Application
 
-### Quick Start Scripts
+### Overview
 
-**Windows PowerShell:**
-```powershell
-# Start the project
-.\START_PROJECT.ps1
+The frontend is a modern React application built with Vite and Tailwind CSS, providing a user-friendly interface for managing courses in the microservices system.
 
-# Test the project
-.\TEST_PROJECT.ps1
+### Access
 
-# Quick health check
-.\QUICK_TEST.ps1
+- **URL:** `http://localhost:3000`
+- **Port:** 3000
+- **Framework:** React 18 with Vite
+- **Styling:** Tailwind CSS
+
+### Features
+
+#### User Interface
+- **Responsive Design** - Works seamlessly on desktop and mobile devices
+- **Modern UI** - Clean, gradient-based design with smooth transitions
+- **Real-time Updates** - Automatically refreshes course list every 3 seconds
+- **Loading States** - Visual feedback during API operations
+- **Error Handling** - User-friendly error messages with dismissible alerts
+- **Success Notifications** - Confirmation messages for successful operations
+
+#### Functionality
+- **Add Courses** - Form to create new courses with ID and name validation
+- **View Courses** - Display all courses in a scrollable list
+- **Delete Courses** - Remove courses with confirmation dialog
+- **Manual Refresh** - Button to manually refresh the course list
+- **System Architecture Display** - Visual representation of data flow
+
+### Frontend Structure
+
 ```
+frontend/
+├── src/
+│   ├── App.jsx              # Main React component
+│   ├── main.jsx             # Application entry point
+│   ├── index.css            # Global styles and Tailwind imports
+│   └── services/
+│       └── api.js           # API service layer for backend communication
+├── Dockerfile               # Container configuration
+├── package.json            # Dependencies and scripts
+├── vite.config.js          # Vite build configuration
+├── tailwind.config.js      # Tailwind CSS configuration
+└── postcss.config.js       # PostCSS configuration
+```
+
+### API Integration
+
+The frontend communicates with both microservices:
+
+- **Instructor Service (Port 8080):**
+  - `POST /add-course` - Create new courses
+  - `DELETE /delete-course` - Remove courses
+
+- **Student Service (Port 8081):**
+  - `GET /get-all-courses` - Fetch all courses
+  - `GET /get-course?id={id}` - Get specific course
+
+### Environment Variables
+
+The frontend uses environment variables for API endpoints:
+
+```env
+VITE_INSTRUCTOR_API=http://localhost:8080
+VITE_STUDENT_API=http://localhost:8081
+```
+
+These can be configured in `docker-compose.yml` or via `.env` file for local development.
+
+### Development
+
+#### Running Locally (without Docker)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The application will be available at `http://localhost:5173` (Vite default port).
+
+#### Building for Production
+
+```bash
+cd frontend
+npm run build
+```
+
+The production build will be in the `dist/` directory.
+
+### User Flow
+
+#### Adding a Course
+1. User enters Course ID and Course Name in the form
+2. Clicks "Add Course" button
+3. Frontend sends POST request to Instructor Service
+4. Instructor Service publishes event to Kafka
+5. Student Service consumes event and saves to database
+6. Frontend auto-refreshes after 2 seconds to show new course
+
+#### Deleting a Course
+1. User clicks "Delete" button on a course card
+2. Confirmation dialog appears
+3. On confirmation, frontend sends DELETE request to Instructor Service
+4. Instructor Service deletes from database and notifies Kafka
+5. Frontend auto-refreshes after 1 second to reflect changes
+
+#### Viewing Courses
+- Courses are automatically fetched on page load
+- List refreshes every 3 seconds to show real-time updates
+- Manual refresh button available for immediate updates
+
+### Technologies
+
+- **React 18.2.0** - UI library
+- **Vite 5.0.8** - Build tool and dev server
+- **Tailwind CSS 3.3.6** - Utility-first CSS framework
+- **Axios 1.6.0** - HTTP client for API requests
+
+### Styling Features
+
+- Gradient backgrounds (blue to indigo)
+- Responsive grid layout (2 columns on desktop, 1 on mobile)
+- Card-based design with shadows
+- Hover effects and transitions
+- Color-coded alerts (green for success, red for errors)
+- Scrollable course list with max height
+
+## 🧪 Testing
 
 ### Using cURL
 
@@ -334,9 +449,6 @@ microservices_project-main/
 ├── docker-compose.yml
 ├── README.md
 ├── .gitignore
-├── START_PROJECT.ps1          # PowerShell script to start all services
-├── TEST_PROJECT.ps1            # Comprehensive test script
-├── QUICK_TEST.ps1              # Quick health check script
 ├── frontend/                   # React frontend application
 │   ├── src/
 │   │   ├── App.jsx
@@ -436,23 +548,43 @@ microservices_project-main/
   - Enhanced error handling
   - Kafka consumer with improved logging
 
+### Frontend Service
+
+- **Port:** 3000
+- **Responsibilities:**
+  - Provide user interface for course management
+  - Communicate with Instructor Service for add/delete operations
+  - Communicate with Student Service for reading courses
+  - Display real-time course updates
+- **Database Access:** No (communicates via API only)
+- **Dependencies:** React, Vite, Tailwind CSS, Axios
+- **Features:**
+  - Responsive design with Tailwind CSS
+  - Real-time auto-refresh (every 3 seconds)
+  - Loading states and error handling
+  - Form validation
+  - Confirmation dialogs for destructive actions
+
 ## 🔄 How It Works
 
 ### Adding a Course
 
-1. Client sends a request to Instructor Service to add a course
-2. Instructor Service publishes the event to Kafka topic `topic1`
-3. Student Service consumes the event from Kafka
-4. Student Service processes the event and saves it to PostgreSQL database
-5. Client can read courses directly from Student Service
+1. User submits course form in Frontend (Port 3000)
+2. Frontend sends POST request to Instructor Service (Port 8080)
+3. Instructor Service validates input and publishes the event to Kafka topic `topic1`
+4. Student Service (Port 8081) consumes the event from Kafka
+5. Student Service processes the event and saves it to PostgreSQL database
+6. Frontend auto-refreshes and displays the new course from Student Service
 
 ### Deleting a Course
 
-1. Client sends a request to Instructor Service to delete a course
-2. Instructor Service directly deletes the course from PostgreSQL database
-3. Instructor Service publishes a delete notification to Kafka topic `topic1`
-4. Student Service consumes the notification from Kafka
-5. Student Service processes the notification (course already deleted by Instructor Service)
+1. User clicks delete button in Frontend (Port 3000)
+2. Frontend sends DELETE request to Instructor Service (Port 8080)
+3. Instructor Service directly deletes the course from PostgreSQL database
+4. Instructor Service publishes a delete notification to Kafka topic `topic1`
+5. Student Service (Port 8081) consumes the notification from Kafka
+6. Student Service processes the notification (course already deleted by Instructor Service)
+7. Frontend auto-refreshes to reflect the deletion
 
 ## 🛑 Stopping Services
 
@@ -480,6 +612,10 @@ docker compose down -v
 - `POSTGRES_URL=postgres://postgres:postgres@postgres:5432/postgres`
 - `KAFKA_BOOTSTRAP_SERVERS=kafka:9092`
 - `KAFKA_TOPIC=topic1`
+
+### Frontend Service
+- `VITE_INSTRUCTOR_API=http://localhost:8080`
+- `VITE_STUDENT_API=http://localhost:8081`
 
 ## 🐛 Troubleshooting
 
