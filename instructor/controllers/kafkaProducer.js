@@ -1,4 +1,3 @@
-import router from "../routers/router.js";
 import { KafkaClient, Producer } from "kafka-node";
 
 const client = new KafkaClient({
@@ -9,13 +8,18 @@ const producer = new Producer(client);
 
 export const kafkaProducer = async (app) => {
   producer.on("ready", async () => {
-    console.log("producer ready");
+    console.log("✅ Kafka Producer is ready");
     kafkaSend({ message: "topic created" });
-    app.use(router);
+  });
+
+  producer.on("error", (err) => {
+    console.error("❌ Kafka producer error:", err);
   });
 };
 
 export function kafkaSend(message) {
+
+  console.log(`📤 Sending message to Kafka topic '${process.env.KAFKA_TOPIC}':`, message);
   producer.send(
     [
       {
@@ -24,7 +28,11 @@ export function kafkaSend(message) {
       },
     ],
     (err, data) => {
-      if (err) console.log(err);
+      if (err) {
+        console.error("❌ Error sending message to Kafka:", err);
+      } else {
+        console.log("✅ Message sent to Kafka successfully");
+      }
     }
   );
 }

@@ -11,11 +11,24 @@ export const kafkaConsumer = () => {
   });
 
   consumer.on("message", async (message) => {
-    const courseData = JSON.parse(message.value);
-    console.log(courseData);
-    if (courseData.method === "add") studentController.addCourse(courseData);
-    else if (courseData.method === "delete")
-      studentController.deleteCourse(courseData);
+    try {
+      const courseData = JSON.parse(message.value);
+      console.log("📨 Received message from Kafka:", courseData);
+      
+      if (courseData.method === "add") {
+        console.log("➕ Processing add course:", courseData);
+        await studentController.addCourse(courseData);
+        console.log("✅ Course added successfully");
+      } else if (courseData.method === "delete") {
+        console.log("➖ Processing delete course:", courseData);
+        await studentController.deleteCourse(courseData);
+        console.log("✅ Course deleted successfully");
+      } else {
+        console.log("⚠️ Unknown method:", courseData.method);
+      }
+    } catch (err) {
+      console.error("❌ Error processing Kafka message:", err);
+    }
   });
 
   consumer.on("error", (err) => {

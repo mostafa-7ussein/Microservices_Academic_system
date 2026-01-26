@@ -30,6 +30,7 @@ Client → Instructor Service → PostgreSQL (direct delete)
 
 ## 🚀 Features
 
+### Core Features
 - Event-driven architecture using Kafka
 - Asynchronous communication between microservices
 - Direct database access for delete operations (Instructor Service)
@@ -37,6 +38,16 @@ Client → Instructor Service → PostgreSQL (direct delete)
 - PostgreSQL database integration
 - Docker containerization
 - Hot reload with nodemon
+- Modern React frontend with Vite and Tailwind CSS
+
+### Recent Improvements ✨
+- ✅ **Input Validation** - Joi validation for all API endpoints with detailed error messages
+- ✅ **Error Handling** - Comprehensive error handling middleware with proper HTTP status codes
+- ✅ **Health Checks** - Health, readiness, and liveness endpoints for monitoring and orchestration
+- ✅ **Enhanced Logging** - Improved logging with emojis and structured messages for better debugging
+- ✅ **API Response Format** - Standardized JSON response format (`{ success, data, message }`)
+- ✅ **Frontend Improvements** - Better error handling, loading states, and data display
+- ✅ **CORS Support** - Full CORS support for frontend integration
 
 ## 📋 Prerequisites
 
@@ -80,7 +91,21 @@ Content-Type: application/json
   "name": "Node.js Basics"
 }
 ```
-**Response:** `"message sent"`
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Course event sent to Kafka successfully",
+  "data": {
+    "id": 1,
+    "name": "Node.js Basics"
+  }
+}
+```
+
+**Validation Rules:**
+- `id`: Required, must be a positive integer
+- `name`: Required, must be a string between 3-100 characters
 
 **Flow:** Instructor Service → Kafka → Student Service → PostgreSQL
 
@@ -94,7 +119,28 @@ Content-Type: application/json
   "name": "Node.js Basics"
 }
 ```
-**Response:** `"Course deleted successfully"` or `"Course not found"`
+**Response (Success):**
+```json
+{
+  "success": true,
+  "message": "Course deleted successfully",
+  "data": {
+    "id": 1
+  }
+}
+```
+
+**Response (Not Found):**
+```json
+{
+  "success": false,
+  "message": "Course not found"
+}
+```
+
+**Validation Rules:**
+- `id`: Required, must be a positive integer
+- `name`: Optional, string
 
 **Flow:** Instructor Service → PostgreSQL (direct delete) → Kafka (notification) → Student Service
 
@@ -102,11 +148,25 @@ Content-Type: application/json
 
 #### Get Course
 ```http
-GET http://localhost:8081/get-course
-Content-Type: application/json
+GET http://localhost:8081/get-course?id=1
+```
 
+**Response (Success):**
+```json
 {
-  "id": 1
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Node.js Basics"
+  }
+}
+```
+
+**Response (Not Found):**
+```json
+{
+  "success": false,
+  "message": "Course not found"
 }
 ```
 
@@ -115,7 +175,96 @@ Content-Type: application/json
 GET http://localhost:8081/get-all-courses
 ```
 
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "Node.js Basics"
+    },
+    {
+      "id": 2,
+      "name": "React Advanced"
+    }
+  ]
+}
+```
+
+### Health Check Endpoints
+
+Both services provide health check endpoints for monitoring:
+
+#### Health Check
+```http
+GET http://localhost:8080/health
+GET http://localhost:8081/health
+```
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "service": "instructor-service",
+  "timestamp": "2024-01-26T10:00:00.000Z",
+  "uptime": 3600,
+  "memory": {
+    "rss": 12345678,
+    "heapTotal": 5678901,
+    "heapUsed": 3456789
+  },
+  "database": "connected",
+  "kafka": "configured",
+  "version": "1.0.0"
+}
+```
+
+#### Readiness Check
+```http
+GET http://localhost:8080/ready
+GET http://localhost:8081/ready
+```
+
+**Response:**
+```json
+{
+  "status": "ready",
+  "service": "instructor-service",
+  "timestamp": "2024-01-26T10:00:00.000Z"
+}
+```
+
+#### Liveness Check
+```http
+GET http://localhost:8080/live
+GET http://localhost:8081/live
+```
+
+**Response:**
+```json
+{
+  "status": "alive",
+  "service": "instructor-service",
+  "timestamp": "2024-01-26T10:00:00.000Z"
+}
+```
+
 ## 🧪 Testing
+
+### Quick Start Scripts
+
+**Windows PowerShell:**
+```powershell
+# Start the project
+.\START_PROJECT.ps1
+
+# Test the project
+.\TEST_PROJECT.ps1
+
+# Quick health check
+.\QUICK_TEST.ps1
+```
 
 ### Using cURL
 
@@ -184,25 +333,44 @@ microservices_project-main/
 ├── docker-compose.yml
 ├── README.md
 ├── .gitignore
-├── instructor/
+├── START_PROJECT.ps1          # PowerShell script to start all services
+├── TEST_PROJECT.ps1            # Comprehensive test script
+├── QUICK_TEST.ps1              # Quick health check script
+├── frontend/                   # React frontend application
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── services/
+│   │   │   └── api.js
+│   │   └── ...
+│   ├── Dockerfile
+│   └── package.json
+├── instructor/                 # Instructor microservice
 │   ├── controllers/
 │   │   ├── dbController.js
 │   │   ├── instructorController.js
 │   │   └── kafkaProducer.js
+│   ├── middleware/
+│   │   ├── errorHandler.js    # Global error handling
+│   │   └── validation.js      # Joi validation schemas
 │   ├── models/
 │   │   └── course.js
 │   ├── routers/
+│   │   ├── health.js          # Health check endpoints
 │   │   └── router.js
 │   ├── Dockerfile
 │   ├── index.js
 │   └── package.json
-├── student/
+├── student/                    # Student microservice
 │   ├── controllers/
 │   │   ├── kafkaConsumer.js
 │   │   └── studentController.js
+│   ├── middleware/
+│   │   ├── errorHandler.js    # Global error handling
+│   │   └── validation.js      # Joi validation schemas
 │   ├── models/
 │   │   └── course.js
 │   ├── routers/
+│   │   ├── health.js          # Health check endpoints
 │   │   └── router.js
 │   ├── Dockerfile
 │   ├── index.js
@@ -214,12 +382,22 @@ microservices_project-main/
 
 ## 🔧 Technologies Used
 
+### Backend
 - **Node.js** - Runtime environment
 - **Express.js** - Web framework
+- **Joi** - Input validation library
 - **Kafka** - Message broker
 - **Kafka-node** - Kafka client for Node.js
 - **PostgreSQL** - Relational database
 - **Sequelize** - ORM for PostgreSQL
+
+### Frontend
+- **React** - UI library
+- **Vite** - Build tool and dev server
+- **Tailwind CSS** - Utility-first CSS framework
+- **Axios** - HTTP client
+
+### DevOps
 - **Docker** - Containerization
 - **Docker Compose** - Multi-container orchestration
 
@@ -234,7 +412,12 @@ microservices_project-main/
   - Direct database access for course deletion
   - Send notifications to Kafka after successful deletion
 - **Database Access:** Yes (for delete operations)
-- **Dependencies:** Express, Kafka-node, Sequelize, PostgreSQL
+- **Dependencies:** Express, Joi, Kafka-node, Sequelize, PostgreSQL
+- **Features:**
+  - Input validation with Joi
+  - Health check endpoints
+  - Enhanced error handling
+  - Structured logging
 
 ### Student Service
 
@@ -245,6 +428,12 @@ microservices_project-main/
   - Provide read endpoints for courses
   - Process delete notifications from Kafka
 - **Database Access:** Yes (full CRUD operations)
+- **Dependencies:** Express, Joi, Kafka-node, Sequelize, PostgreSQL
+- **Features:**
+  - Input validation with Joi
+  - Health check endpoints
+  - Enhanced error handling
+  - Kafka consumer with improved logging
 
 ## 🔄 How It Works
 
@@ -328,6 +517,62 @@ docker compose build --no-cache [service-name]
 # Restart the service
 docker compose up -d [service-name]
 ```
+
+### Validation Errors
+If you receive validation errors, check the request format:
+- Course ID must be a positive integer
+- Course name must be between 3-100 characters
+- All required fields must be provided
+
+**Example Validation Error:**
+```json
+{
+  "success": false,
+  "message": "Validation error",
+  "errors": [
+    {
+      "field": "id",
+      "message": "Course ID must be a number"
+    },
+    {
+      "field": "name",
+      "message": "Course name must be at least 3 characters"
+    }
+  ]
+}
+```
+
+## 📚 Additional Features
+
+### Input Validation
+All API endpoints use Joi for input validation:
+- Automatic validation of request data
+- Detailed error messages for invalid inputs
+- Type checking and constraints
+- Sanitization of input data
+
+### Error Handling
+Comprehensive error handling system:
+- Global error handler middleware
+- Proper HTTP status codes
+- Structured error responses
+- Development vs production error details
+
+### Health Monitoring
+Health check endpoints for:
+- Service health status
+- Database connectivity
+- Kafka configuration
+- Memory usage and uptime
+- Readiness and liveness checks
+
+### Frontend Application
+Modern React frontend with:
+- Real-time course list updates (auto-refresh every 3 seconds)
+- Add/Delete course functionality
+- Loading states and error messages
+- Responsive design with Tailwind CSS
+- Accessible at `http://localhost:3000`
 
 ## 📄 License
 

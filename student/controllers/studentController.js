@@ -33,16 +33,20 @@ const addCourse = async (courseData) => {
     await dbInstance.sync();
     
     const course = new Course(courseData);
+    console.log(`🔍 Checking if course ${course.id} exists...`);
     const result = await CourseModel.findByPk(course.id);
     if (!result) {
       await CourseModel.create({
         id: course.id,
         name: course.name,
       });
-      console.log("Course added successfully");
-    } else console.log("Course Id Already Exist");
+      console.log(`✅ Course added successfully: ID=${course.id}, Name=${course.name}`);
+    } else {
+      console.log(`⚠️ Course ID ${course.id} already exists. Skipping...`);
+    }
   } catch (err) {
-    console.log(err);
+    console.error("❌ Error adding course:", err);
+    throw err;
   }
 };
 

@@ -60,3 +60,17 @@ services:
       - postgres
       - kafka
       - instructor
+  frontend:
+    container_name: frontend
+    build: ./frontend
+    ports:
+      - 3000:3000
+    volumes:
+      - ./frontend:/frontend
+      - /frontend/node_modules
+    environment:
+      - VITE_INSTRUCTOR_API=http://localhost:8080
+      - VITE_STUDENT_API=http://localhost:8081
+    depends_on:
+      - instructor
+      - student
