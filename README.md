@@ -19,6 +19,7 @@ This project implements a microservices architecture with the following componen
 Client → Instructor Service → Kafka → Student Service → PostgreSQL
 ```
 
+
 **Deleting a Course:**
 ```
 Client → Instructor Service → PostgreSQL (direct delete)
