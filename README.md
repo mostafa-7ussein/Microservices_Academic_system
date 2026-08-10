@@ -1,3 +1,4 @@
+﻿> **Quick summary:** Event-driven microservices (Node.js + Kafka + PostgreSQL) orchestrated with Docker Compose. Useful demo of service boundaries, async messaging, and containerized local delivery.
 # Microservices Project with Kafka
 
 A microservices architecture project demonstrating event-driven communication using Kafka message broker, with Node.js/Express services and PostgreSQL database.
@@ -722,3 +723,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 🔗 Repository
 
 [GitHub Repository](https://github.com/mostafa-7ussein/microservices_Academic_system)
+
